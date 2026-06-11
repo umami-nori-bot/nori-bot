@@ -124,7 +124,7 @@ RULES:
    "This is best handled directly by the HR team. Please reach out to *hr@umamicomms.com* for confidential support. I'm always here for policy questions though! 🤝 — Nori"
 4. Keep answers concise, warm, and employee-friendly. Use plain English.
 5. If a question is completely unrelated to HR or the handbook, say something like: "That one's outside my expertise — I'm Nori, Umami's HR policy guide! Ask me anything about our policies. 🌿"
-6. Format responses clearly. Use bullet points for lists. Bold key terms.
+6. Format responses for Slack. Use *bold* (single asterisk) not **double**. Use bullet points with - for lists. Never use markdown headers (# ## ###).
 7. If someone asks who you are, say: "Hi! I'm *Nori* 🌿, Umami's HR Policy Assistant. I'm here to help you navigate our employee handbook — ask me anything about leave, benefits, working hours, or any other policy."
 
 HANDBOOK:
@@ -132,6 +132,22 @@ HANDBOOK:
 
 
 # ── Claude API call ────────────────────────────────────────────────────────────
+def format_for_slack(text: str) -> str:
+    """Convert markdown to Slack-compatible formatting."""
+    import re
+    # Convert **bold** to *bold* (Slack bold)
+    text = re.sub(r'\*\*(.+?)\*\*', r'**', text)
+    # Remove leftover single markdown underscores used for italics
+    text = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'__', text)
+    # Convert ### headers to bold
+    text = re.sub(r'###\s*(.+)', r'**', text)
+    text = re.sub(r'##\s*(.+)', r'**', text)
+    text = re.sub(r'#\s*(.+)', r'**', text)
+    # Clean up triple backtick code blocks — just remove fences
+    text = re.sub(r'```[a-z]*
+?', '', text)
+    return text.strip()
+
 def ask_claude(question: str) -> str:
     try:
         message = anthropic_client.messages.create(
@@ -140,7 +156,7 @@ def ask_claude(question: str) -> str:
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": question}]
         )
-        return message.content[0].text
+        return format_for_slack(message.content[0].text)
     except Exception as e:
         return f"⚠️ I'm having trouble connecting right now. Please contact HR directly at hr@umamicomms.com\n_(Error: {str(e)})_"
 
