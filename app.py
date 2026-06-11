@@ -180,11 +180,13 @@ def slash_command():
     # Acknowledge immediately (Slack requires response within 3 seconds)
     def process_and_respond():
         answer = ask_claude(question)
-        import requests as req_lib
-        req_lib.post(response_url, json={
+        import urllib.request, json as json_lib
+        payload = json_lib.dumps({
             "response_type": "in_channel",
             "text": f"*<@{user_id}> asked:* {question}\n\n{answer}"
-        })
+        }).encode("utf-8")
+        req = urllib.request.Request(response_url, data=payload, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req)
 
     threading.Thread(target=process_and_respond).start()
 
