@@ -173,26 +173,26 @@ def slash_command():
             "text": "Hi! I am Nori. Ask me anything about Umami HR policies.\nUsage: /hrpolicy How many annual leave days do I get?"
         })
 
+    channel_id = request.form.get("channel_id", "")
+
     def process_and_respond():
-        answer = ask_claude(question)
-        import urllib.request, json as json_lib
-        payload = json_lib.dumps({
-            "response_type": "in_channel",
-            "text": "*<@" + user_id + "> asked:* " + question + "\n\n" + answer
-        }).encode("utf-8")
-        req = urllib.request.Request(
-            response_url,
-            data=payload,
-            headers={"Content-Type": "application/json"}
+        # Post "thinking" message immediately so user sees activity
+        thinking = slack_client.chat_postMessage(
+            channel=channel_id,
+            text="*<@" + user_id + "> asked:* " + question + "\n\n_Nori is looking that up..._"
         )
-        urllib.request.urlopen(req)
+        answer = ask_claude(question)
+        # Update the thinking message with the real answer
+        slack_client.chat_update(
+            channel=channel_id,
+            ts=thinking["ts"],
+            text="*<@" + user_id + "> asked:* " + question + "\n\n" + answer
+        )
 
     threading.Thread(target=process_and_respond).start()
 
-    return jsonify({
-        "response_type": "ephemeral",
-        "text": "Looking that up for you..."
-    })
+    # Respond to Slack immediately (within 3 seconds) with empty 200
+    return "", 200
 
 
 @app.route("/slack/events", methods=["POST"])
