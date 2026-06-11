@@ -1,7 +1,6 @@
 """
-Umami Comms HR Policy Bot
+Umami Comms — Nori HR Policy Bot
 Handles Slack events, slash commands, and DMs.
-Answers questions using the employee handbook via Claude API.
 """
 
 import os
@@ -18,10 +17,8 @@ slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 signature_verifier = SignatureVerifier(os.environ["SLACK_SIGNING_SECRET"])
 anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-# ── Track processed event IDs to avoid duplicate replies ──────────────────────
 processed_events = set()
 
-# ── Handbook knowledge base ───────────────────────────────────────────────────
 HANDBOOK = """
 SECTION 1 - CULTURE & WORKPLACE EXPECTATIONS
 Core values: Respect, Integrity, Innovation. Also: Competitive, Honest, Free-Spirited, Agile, Caring, Ambitious, Tolerant, Bold, Humble.
@@ -55,7 +52,7 @@ Hybrid Schedule: In-office: Monday, Wednesday, Thursday. Remote: Tuesday, Friday
 Overtime & TOIL: Overtime not remunerated in cash. TOIL = 1 lieu day per authorized weekend worked. Must be used within 1 month. Submit via Bayzat (Lieu Days tab). Weekday overtime: flex hours next day.
 Annual Leave: 22 working days per year. Accrual ~1.83 days/month. From 3 months of service, can use accrued leave. Only 50% of unused leave carries forward; remainder forfeited. Not encashed except upon termination after 1 year service (at basic pay rate). Requests via Bayzat.
 Public Holidays: All official UAE public holidays. Working on a public holiday = compensatory leave or pay in lieu.
-Sick Leave: After probation, up to 90 calendar days/year (first 15 days full pay, next 30 days half pay, remainder unpaid per UAE law). Notify Line Manager within 2 hours of start time. Doctor's certificate required for absences over 2 days.
+Sick Leave: After probation, up to 90 calendar days/year (first 15 days full pay, next 30 days half pay, remainder unpaid per UAE law). Notify Line Manager within 2 hours of start time. Doctor certificate required for absences over 2 days.
 Maternity Leave: Less than 1 year = 45 days full pay. 1-3 years = 90 days full pay. 3+ years = 180 days full pay. Next 15 days at 50% pay. Return-to-work expected within 1 year. Nursing breaks: 1-2 daily (up to 1 hr total) for 6 months post-return.
 Paternity Leave: 30 calendar days fully paid, taken intermittently or concurrently over 6 months after birth. Must continue employment for at least 1 year after.
 Compassionate Leave: 10 days for spouse death; 5 days for parent, sibling, child, grandparent. Upload on Bayzat Compassionate Leave tab.
@@ -63,8 +60,8 @@ Hajj Leave: 30 days unpaid (once during employment).
 Study Leave: 10 business days for state-approved education; requires 2+ years service.
 Birthday Leave: Paid day off on birthday (weekday). If weekend, take preceding Friday. Cannot combine with other leave. Submit via Bayzat 2 weeks in advance.
 Personal Leave: 5 days per calendar year for essential personal tasks (bank, doctor, moving). Cannot combine with other leave.
-Remote Work (Global): 1+ year of service, no disciplinary issues. Up to 5 consecutive days per year. Submit 1 month in advance. Must be available 9AM-6PM Dubai time. Data roaming charges deducted from salary.
-Remote Work (Local): Must be physically in UAE. Post-probation only. Must attend in-person if required.
+Remote Work Global: 1+ year of service, no disciplinary issues. Up to 5 consecutive days per year. Submit 1 month in advance. Must be available 9AM-6PM Dubai time. Data roaming charges deducted from salary.
+Remote Work Local: Must be physically in UAE. Post-probation only. Must attend in-person if required.
 Christmas Day: December 25 is a paid holiday. If already on annual leave, Christmas Day is part of that leave.
 Unpaid Leave: First 3 months typically unpaid. Post-3-months, available when annual leave exhausted, subject to approval.
 Handover Policy: Written handover document required before any leave. Handover meeting at least 1 working day before leave start. Debrief upon return.
@@ -76,7 +73,7 @@ End-of-Service Gratuity: Requires 1 year continuous service. 1-5 years = 21 days
 EOSB Beneficiary Nomination: Voluntary but recommended. HR provides Beneficiary Appointment Form.
 Medical Insurance: Provided to Umami-sponsored employees. Details on Bayzat app. Must disclose pre-existing/chronic conditions before employment. Optional upgrades/dependents at employee expense.
 Annual Ticket Allowance: After 1 year service. AED 3,500 cap. Options: book via Airlink, book independently for reimbursement, or cash-out. 4-month claim window from work anniversary. Submit via Bayzat.
-Expense Reimbursement: Submit via Bayzat with receipts. Day-to-day: by 4th of following month. International travel: within 15 days of return. Pre-approval required for expenses over AED 500. Petrol to Abu Dhabi: AED 150 cap per round trip. Taxis: Hala/Bolt with digital invoice. Non-reimbursable: personal meals, alcohol (unless pre-approved client event), personal entertainment, fines, premium vehicles without approval.
+Expense Reimbursement: Submit via Bayzat with receipts. Day-to-day: by 4th of following month. International travel: within 15 days of return. Pre-approval required for expenses over AED 500. Petrol to Abu Dhabi: AED 150 cap per round trip. Taxis: Hala/Bolt with digital invoice. Non-reimbursable: personal meals, alcohol unless pre-approved client event, personal entertainment, fines, premium vehicles without approval.
 
 SECTION 6 - HEALTH, SAFETY & WELLBEING
 Safety: Follow UAE & DMCC regulations. Report hazards to HR. Emergency evacuation routes are marked.
@@ -90,9 +87,9 @@ Written Warning: Active for 6 months. Employees on written warning generally ine
 Learning & Development: Train the Trainer, workshops, on-the-job learning, Individual Development Plans.
 
 SECTION 8 - PROBLEM-SOLVING & RESOLUTION
-Progressive Discipline: Verbal warning → Written warning → Final written warning → Termination.
-Immediate Termination Grounds (no notice): Forged documents, material damage, safety violations, repeated duty failure despite 2 written warnings, confidential info disclosure, intoxication at work, workplace assault, 20+ non-consecutive or 7 consecutive unjustified absences, abuse of position, unauthorized employment elsewhere.
-Grievance Procedure: Informal (talk to manager or HR) → Formal (written to HR) → Investigation (10 working days) → Outcome in writing (5 working days) → Appeal within 5 working days of outcome. No retaliation for good-faith grievances.
+Progressive Discipline: Verbal warning, Written warning, Final written warning, Termination.
+Immediate Termination Grounds: Forged documents, material damage, safety violations, repeated duty failure despite 2 written warnings, confidential info disclosure, intoxication at work, workplace assault, 20+ non-consecutive or 7 consecutive unjustified absences, abuse of position, unauthorized employment elsewhere.
+Grievance Procedure: Informal (talk to manager or HR), Formal (written to HR), Investigation (10 working days), Outcome in writing (5 working days), Appeal within 5 working days of outcome. No retaliation for good-faith grievances.
 
 SECTION 9 - OFFBOARDING & EXIT
 Resignation: Written notice to Line Manager, HOD, and HR. Minimum 30 days notice. Continue duties and complete handover.
@@ -108,59 +105,59 @@ COO: Sara El Choueiry | sara@umamicomms.com
 Office: 103 Tamweel Tower, Cluster U, JLT, Dubai | +97145726990
 """
 
-SYSTEM_PROMPT = f"""You are Nori, Umami Comms' friendly HR Policy Assistant. You are warm, approachable, and knowledgeable — like a helpful colleague who knows the handbook inside out.
+SYSTEM_PROMPT = """You are Nori, Umami Comms' friendly HR Policy Assistant. You are warm, approachable, and knowledgeable.
 Your ONLY knowledge source is the employee handbook content below. Never use outside knowledge.
 
 PERSONALITY:
 - Warm and approachable, never robotic
-- Sign off responses naturally as Nori when it fits (e.g. "Hope that helps! — Nori 🌿")
 - Use a conversational tone while staying professional
-- Occasionally use light, friendly language (e.g. "Great question!", "Happy to help with that!")
+- Occasionally use light friendly language like "Happy to help with that!"
 
 RULES:
 1. Answer ONLY from the handbook. If the answer is not there, say so clearly.
-2. Every answer MUST end with: 📖 *Source: [exact section name]*
-3. For sensitive matters requiring human judgment — active grievances, disciplinary cases, salary negotiations, visa/immigration problems, specific medical situations, personal complaints about colleagues — respond with:
-   "This is best handled directly by the HR team. Please reach out to *hr@umamicomms.com* for confidential support. I'm always here for policy questions though! 🤝 — Nori"
+2. Every answer MUST end with: :books: *Source: [exact section name]*
+3. For sensitive matters requiring human judgment such as active grievances, disciplinary cases, salary negotiations, visa problems, medical situations, or personal complaints about colleagues, respond with: "This is best handled directly by the HR team. Please reach out to hr@umamicomms.com for confidential support. I am always here for policy questions though! :handshake:"
 4. Keep answers concise, warm, and employee-friendly. Use plain English.
-5. If a question is completely unrelated to HR or the handbook, say something like: "That one's outside my expertise — I'm Nori, Umami's HR policy guide! Ask me anything about our policies. 🌿"
-6. Format responses clearly. Use bullet points for lists. Bold key terms.
-7. If someone asks who you are, say: "Hi! I'm *Nori* 🌿, Umami's HR Policy Assistant. I'm here to help you navigate our employee handbook — ask me anything about leave, benefits, working hours, or any other policy."
+5. If a question is unrelated to HR or the handbook, say: "That one is outside my expertise. I am Nori, Umami HR policy guide! Ask me anything about our policies."
+6. Format responses for Slack: use *single asterisks* for bold, use - for bullet points, never use ## headers or **double asterisks**.
+7. If someone asks who you are, say: "Hi! I am *Nori*, Umami's HR Policy Assistant. I am here to help you navigate our employee handbook. Ask me anything about leave, benefits, working hours, or any other policy."
 
 HANDBOOK:
-{HANDBOOK}"""
+""" + HANDBOOK
 
 
-# ── Claude API call ────────────────────────────────────────────────────────────
-def ask_claude(question: str) -> str:
+def format_for_slack(text):
+    text = re.sub(r'\*\*(.+?)\*\*', r'*\1*', text)
+    text = re.sub(r'#{1,3}\s*(.+)', r'*\1*', text)
+    text = re.sub(r'```[\w]*', '', text)
+    return text.strip()
+
+
+def ask_claude(question):
     try:
         message = anthropic_client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-5",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": question}]
         )
-        return message.content[0].text
+        return format_for_slack(message.content[0].text)
     except Exception as e:
-        return f"⚠️ I'm having trouble connecting right now. Please contact HR directly at hr@umamicomms.com\n_(Error: {str(e)})_"
+        return "I am having trouble connecting right now. Please contact HR directly at hr@umamicomms.com"
 
 
-# ── Send reply helpers ─────────────────────────────────────────────────────────
-def reply_in_thread(channel: str, thread_ts: str, text: str):
-    """Reply in a thread (used for channel messages)."""
+def reply_in_thread(channel, thread_ts, text):
     slack_client.chat_postMessage(channel=channel, thread_ts=thread_ts, text=text)
 
-def reply_dm(channel: str, text: str):
-    """Reply in a DM conversation."""
+
+def reply_dm(channel, text):
     slack_client.chat_postMessage(channel=channel, text=text)
 
 
-# ── Slack signature verification ──────────────────────────────────────────────
 def verify_slack_request(req):
     return signature_verifier.is_valid_request(req.get_data(), req.headers)
 
 
-# ── /hrpolicy slash command ────────────────────────────────────────────────────
 @app.route("/slack/command", methods=["POST"])
 def slash_command():
     if not verify_slack_request(request):
@@ -168,35 +165,36 @@ def slash_command():
 
     question = request.form.get("text", "").strip()
     user_id = request.form.get("user_id", "")
-    channel_id = request.form.get("channel_id", "")
     response_url = request.form.get("response_url", "")
 
     if not question:
         return jsonify({
             "response_type": "ephemeral",
-            "text": "👋 Hi! Ask me anything about Umami's HR policies.\n*Usage:* `/hrpolicy How many annual leave days do I get?`"
+            "text": "Hi! I am Nori. Ask me anything about Umami HR policies.\nUsage: /hrpolicy How many annual leave days do I get?"
         })
 
-    # Acknowledge immediately (Slack requires response within 3 seconds)
     def process_and_respond():
         answer = ask_claude(question)
         import urllib.request, json as json_lib
         payload = json_lib.dumps({
             "response_type": "in_channel",
-            "text": f"*<@{user_id}> asked:* {question}\n\n{answer}"
+            "text": "*<@" + user_id + "> asked:* " + question + "\n\n" + answer
         }).encode("utf-8")
-        req = urllib.request.Request(response_url, data=payload, headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(
+            response_url,
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
         urllib.request.urlopen(req)
 
     threading.Thread(target=process_and_respond).start()
 
     return jsonify({
         "response_type": "ephemeral",
-        "text": "🔍 Looking that up for you..."
+        "text": "Looking that up for you..."
     })
 
 
-# ── Event subscriptions (channel messages + DMs) ──────────────────────────────
 @app.route("/slack/events", methods=["POST"])
 def slack_events():
     if not verify_slack_request(request):
@@ -204,7 +202,6 @@ def slack_events():
 
     data = request.json
 
-    # URL verification challenge (one-time setup)
     if data.get("type") == "url_verification":
         return jsonify({"challenge": data["challenge"]})
 
@@ -212,14 +209,12 @@ def slack_events():
     event_id = data.get("event_id", "")
     event_type = event.get("type")
 
-    # Deduplicate
     if event_id in processed_events:
         return jsonify({"ok": True})
     processed_events.add(event_id)
     if len(processed_events) > 500:
         processed_events.clear()
 
-    # Ignore bot's own messages
     if event.get("bot_id") or event.get("subtype") == "bot_message":
         return jsonify({"ok": True})
 
@@ -229,13 +224,11 @@ def slack_events():
     ts = event.get("ts", "")
     channel_type = event.get("channel_type", "")
 
-    # Remove any @bot mention from the text
     text_clean = re.sub(r"<@[A-Z0-9]+>", "", text).strip()
 
     if not text_clean:
         return jsonify({"ok": True})
 
-    # DM — respond directly
     if event_type == "message" and channel_type == "im":
         def handle_dm():
             answer = ask_claude(text_clean)
@@ -243,8 +236,7 @@ def slack_events():
         threading.Thread(target=handle_dm).start()
         return jsonify({"ok": True})
 
-    # Channel message in #ask-hr — respond in thread
-    hr_channel_name = os.environ.get("HR_CHANNEL_NAME", "ask-hr")
+    hr_channel_name = os.environ.get("HR_CHANNEL_NAME", "ask-nori")
     try:
         channel_info = slack_client.conversations_info(channel=channel)
         channel_name = channel_info["channel"]["name"]
@@ -261,10 +253,9 @@ def slack_events():
     return jsonify({"ok": True})
 
 
-# ── Health check ───────────────────────────────────────────────────────────────
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "bot": "Nori — Umami HR Policy Assistant"})
+    return jsonify({"status": "ok", "bot": "Nori - Umami HR Policy Assistant"})
 
 
 if __name__ == "__main__":
