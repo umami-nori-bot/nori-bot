@@ -1,5 +1,5 @@
 """
-Umami Comms — Nori HR Policy Bot
+Umami Comms - Nori HR Policy Bot
 Handles Slack events, slash commands, and DMs.
 """
 
@@ -71,7 +71,7 @@ Salary: Paid monthly on 28th via UAE WPS in AED. Basic pay + allowances per cont
 Salary Review: Annual, based on KPIs, performance, market benchmarks, company performance. Not automatic.
 End-of-Service Gratuity: Requires 1 year continuous service. 1-5 years = 21 days basic pay/year. 5+ years = 30 days basic pay/year. Max = 2 years basic salary. Paid within 14 days of termination.
 EOSB Beneficiary Nomination: Voluntary but recommended. HR provides Beneficiary Appointment Form.
-Medical Insurance: Provided to Umami-sponsored employees. Details on Bayzat app. Must disclose pre-existing/chronic conditions before employment. Optional upgrades/dependents at employee expense.
+Medical Insurance: Provided to all Umami-sponsored employees. Full plan details are in Section 10. You must disclose any pre-existing or chronic conditions before employment starts. For specific questions about claims or network hospitals, check the Bayzat app or contact hr@umamicomms.com.
 Annual Ticket Allowance: After 1 year service. AED 3,500 cap. Options: book via Airlink, book independently for reimbursement, or cash-out. 4-month claim window from work anniversary. Submit via Bayzat.
 Expense Reimbursement: Submit via Bayzat with receipts. Day-to-day: by 4th of following month. International travel: within 15 days of return. Pre-approval required for expenses over AED 500. Petrol to Abu Dhabi: AED 150 cap per round trip. Taxis: Hala/Bolt with digital invoice. Non-reimbursable: personal meals, alcohol unless pre-approved client event, personal entertainment, fines, premium vehicles without approval.
 
@@ -98,6 +98,67 @@ Garden Leave: Company may require employee to stay away from office during notic
 Final Settlement: Final salary, unused annual leave payment, gratuity. All within 14 days of termination.
 Exit Procedures: Return all company property. Clear advances. Exit interview with HR. Activate Out-of-Office email. Reference letters: neutral employment certificate provided; additional reference at management discretion.
 
+SECTION 10 - MEDICAL INSURANCE PLAN DETAILS (Health Secure 7 - Category 2)
+Plan Name: Health Secure 7, Category 2
+Area of Cover: UAE plus any one of India, Pakistan, Sri Lanka, Bangladesh, Philippines, Nepal & Bhutan (home country only)
+Yearly Maximum: AED 250,000
+Outside Area of Cover: Emergency only, no benefit otherwise
+
+IN-PATIENT & DAY CARE:
+- In-patient and daycare including surgeons, anesthetists, consultation charges, diagnostic procedures and physiotherapy: Included
+- Level of cover: 100% of Reasonable and Customary (R&C) cost in network A.4
+- Daily accommodation charges: Included
+- In-patient direct billing network: A.4
+- Parent accommodation (one parent staying with insured child under 18): AED 500 per night
+- Companion accommodation for critical illness or medical necessity with prior approval: AED 100 per night
+- Cash benefit for in-patient treatment received completely free of charge: AED 500 per night
+
+OUT-PATIENT:
+- GP and specialist consultation charges: Included
+- Out-patient direct billing: Included
+- Out-patient direct billing network: A.4
+- Level of cover where network is available: 100% of R&C cost in network shown
+- Courses of physiotherapy: Included
+- Chiropractic, osteopathy, homeopathy and acupuncture: No benefit
+- Oral and maxillofacial surgery: Included
+
+EMERGENCY & SUPPORT SERVICES:
+- Ambulance transport: Included
+- International emergency evacuation and repatriation including accompanying adult: Included
+- Nursing at home: Included
+- Teleconsultation: Included
+- Road traffic accidents: Included
+
+DENTAL:
+- Routine dental care: Up to AED 1,500 with 20% co-insurance (direct billing only)
+- Diagnostic and treatment for dental including gum treatments (medical emergency cases): Included
+- Accidental damage to teeth: Included
+
+OPTICAL:
+- Optical: No benefit
+- Ancillary equipment: No benefit
+
+MATERNITY:
+- Pre- and post-natal complications: Included, Nil Waiting Period
+- Pregnancy and delivery out-patient: Nil Waiting Period
+- Pregnancy and delivery in-patient: AED 10,000, Nil Waiting Period
+
+PRE-EXISTING CONDITIONS:
+- Cover for pre-existing conditions including pharmacy: AED 150,000 in aggregate
+- Pre-existing conditions outside UAE: AED 2,500
+
+MENTAL HEALTH:
+- Psychiatric treatment: AED 5,000 with 30% co-insurance
+- Outpatient mental health and counselling: AED 800 with 30% co-insurance
+
+PREVENTIVE & WELLNESS:
+- Health screen: No benefit
+- Essential vaccinations: Children up to 6 years old Included. Adults and children 7 years and above up to AED 100
+- Preventive services and Diabetes as per DHA protocol: Every 3 years from age 30. High risk individuals annually from age 18
+- Basmah / Patient Support Program as per DHA protocol for Dubai visa holders: Included
+- Herpes Zoster vaccine as per DHA protocol for Dubai visa holders: Included
+- Disease Management Program as per DHA protocol for Dubai visa holders: Included
+
 KEY CONTACTS:
 HR (leaves, benefits, general): hr@umamicomms.com
 Finance/Payroll: finance@umamicomms.com
@@ -105,8 +166,8 @@ COO: Sara El Choueiry | sara@umamicomms.com
 Office: 103 Tamweel Tower, Cluster U, JLT, Dubai | +97145726990
 """
 
-SYSTEM_PROMPT = """You are Nori, Umami Comms' friendly HR Policy Assistant. You are warm, approachable, and knowledgeable.
-Your ONLY knowledge source is the employee handbook content below. Never use outside knowledge.
+SYSTEM_PROMPT = """You are Nori, Umami Comms friendly HR Policy Assistant. You are warm, approachable, and knowledgeable.
+Your ONLY knowledge source is the employee handbook and insurance policy content below. Never use outside knowledge.
 
 PERSONALITY:
 - Warm and approachable, never robotic
@@ -116,13 +177,15 @@ PERSONALITY:
 RULES:
 1. Answer ONLY from the handbook. If the answer is not there, say so clearly.
 2. Every answer MUST end with: :books: *Source: [exact section name]*
-3. For sensitive matters requiring human judgment such as active grievances, disciplinary cases, salary negotiations, visa problems, medical situations, or personal complaints about colleagues, respond with: "This is best handled directly by the HR team. Please reach out to hr@umamicomms.com for confidential support. I am always here for policy questions though! :handshake:"
-4. Keep answers concise, warm, and employee-friendly. Use plain English.
-5. If a question is unrelated to HR or the handbook, say: "That one is outside my expertise. I am Nori, Umami HR policy guide! Ask me anything about our policies."
-6. Format responses for Slack: use *single asterisks* for bold, use - for bullet points, never use ## headers or **double asterisks**.
-7. If someone asks who you are, say: "Hi! I am *Nori*, Umami's HR Policy Assistant. I am here to help you navigate our employee handbook. Ask me anything about leave, benefits, working hours, or any other policy."
+3. For insurance questions, ALWAYS answer from Section 10 - Medical Insurance Plan Details which contains the full plan breakdown. Never refer employees to Bayzat for information that is already in Section 10.
+4. For sensitive matters requiring human judgment such as active grievances, disciplinary cases, salary negotiations, visa problems, or personal complaints about colleagues, respond with: "This is best handled directly by the HR team. Please reach out to hr@umamicomms.com for confidential support. I am always here for policy questions though! :handshake:"
+5. Keep answers concise, warm, and employee-friendly. Use plain English.
+6. If a question is unrelated to HR or the handbook, say: "That one is outside my expertise. I am Nori, Umami HR policy guide! Ask me anything about our policies."
+7. Format responses for Slack: use *single asterisks* for bold, use - for bullet points, never use ## headers or **double asterisks**.
+8. If someone asks who you are, say: "Hi! I am *Nori*, Umami HR Policy Assistant. I am here to help you navigate our employee handbook and insurance plan. Ask me anything about leave, benefits, insurance, working hours, or any other policy."
+9. Never mention optional insurance upgrades or adding dependents in your responses.
 
-HANDBOOK:
+HANDBOOK AND INSURANCE POLICY:
 """ + HANDBOOK
 
 
@@ -165,34 +228,28 @@ def slash_command():
 
     question = request.form.get("text", "").strip()
     user_id = request.form.get("user_id", "")
-    response_url = request.form.get("response_url", "")
+    channel_id = request.form.get("channel_id", "")
 
     if not question:
         return jsonify({
             "response_type": "ephemeral",
-            "text": "Hi! I am Nori. Ask me anything about Umami HR policies.\nUsage: /hrpolicy How many annual leave days do I get?"
+            "text": "Hi! I am Nori. Ask me anything about Umami HR policies.\nUsage: /asknori How many annual leave days do I get?"
         })
 
     def process_and_respond():
-        answer = ask_claude(question)
-        import urllib.request, json as json_lib
-        payload = json_lib.dumps({
-            "response_type": "in_channel",
-            "text": "*<@" + user_id + "> asked:* " + question + "\n\n" + answer
-        }).encode("utf-8")
-        req = urllib.request.Request(
-            response_url,
-            data=payload,
-            headers={"Content-Type": "application/json"}
+        thinking = slack_client.chat_postMessage(
+            channel=channel_id,
+            text="*<@" + user_id + "> asked:* " + question + "\n\n_Nori is looking that up..._"
         )
-        urllib.request.urlopen(req)
+        answer = ask_claude(question)
+        slack_client.chat_update(
+            channel=channel_id,
+            ts=thinking["ts"],
+            text="*<@" + user_id + "> asked:* " + question + "\n\n" + answer
+        )
 
     threading.Thread(target=process_and_respond).start()
-
-    return jsonify({
-        "response_type": "ephemeral",
-        "text": "Looking that up for you..."
-    })
+    return "", 200
 
 
 @app.route("/slack/events", methods=["POST"])
@@ -218,7 +275,6 @@ def slack_events():
     if event.get("bot_id") or event.get("subtype") == "bot_message":
         return jsonify({"ok": True})
 
-    user_id = event.get("user", "")
     text = event.get("text", "").strip()
     channel = event.get("channel", "")
     ts = event.get("ts", "")
