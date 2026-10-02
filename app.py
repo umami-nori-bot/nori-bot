@@ -98,14 +98,14 @@ Garden Leave: Company may require employee to stay away from office during notic
 Final Settlement: Final salary, unused annual leave payment, gratuity. All within 14 days of termination.
 Exit Procedures: Return all company property. Clear advances. Exit interview with HR. Activate Out-of-Office email. Reference letters: neutral employment certificate provided; additional reference at management discretion.
 
-MEDICAL INSURANCE PLAN DETAILS (Health Secure 7 - Category 2)
-Plan Name: GIG Health Secure 7, Category 2
+SECTION 10 - MEDICAL INSURANCE PLAN DETAILS (Health Secure 7 - Category 2)
+Plan Name: Health Secure 7, Category 2
 Area of Cover: UAE plus any one of India, Pakistan, Sri Lanka, Bangladesh, Philippines, Nepal & Bhutan (home country only)
 Yearly Maximum: AED 250,000
 Outside Area of Cover: Emergency only, no benefit otherwise
 
 IN-PATIENT & DAY CARE:
-- In-patient and daycare including surgeons, anaesthetists, consultation charges, diagnostic procedures and physiotherapy: Included
+- In-patient and daycare including surgeons, anesthetists, consultation charges, diagnostic procedures and physiotherapy: Included
 - Level of cover: 100% of Reasonable and Customary (R&C) cost in network A.4
 - Daily accommodation charges: Included
 - In-patient direct billing network: A.4
@@ -240,7 +240,7 @@ def slash_command():
         answer = ask_claude(question)
         import urllib.request, json as json_lib
         payload = json_lib.dumps({
-            "response_type": "in_channel",
+            "response_type": "ephemeral",
             "text": answer
         }).encode("utf-8")
         req = urllib.request.Request(
@@ -322,3 +322,4 @@ def health():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
     app.run(host="0.0.0.0", port=port)
+
