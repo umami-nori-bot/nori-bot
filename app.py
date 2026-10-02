@@ -237,15 +237,19 @@ def slash_command():
         })
 
     def process_and_respond():
+        # Open a DM channel with the user so the reply always works
+        # regardless of where the slash command was typed
+        dm = slack_client.conversations_open(users=user_id)
+        dm_channel = dm["channel"]["id"]
         thinking = slack_client.chat_postMessage(
-            channel=channel_id,
-            text="*<@" + user_id + "> asked:* " + question + "\n\n_Nori is looking that up..._"
+            channel=dm_channel,
+            text="_Nori is looking that up..._"
         )
         answer = ask_claude(question)
         slack_client.chat_update(
-            channel=channel_id,
+            channel=dm_channel,
             ts=thinking["ts"],
-            text="*<@" + user_id + "> asked:* " + question + "\n\n" + answer
+            text=answer
         )
 
     threading.Thread(target=process_and_respond).start()
