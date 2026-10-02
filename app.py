@@ -98,14 +98,14 @@ Garden Leave: Company may require employee to stay away from office during notic
 Final Settlement: Final salary, unused annual leave payment, gratuity. All within 14 days of termination.
 Exit Procedures: Return all company property. Clear advances. Exit interview with HR. Activate Out-of-Office email. Reference letters: neutral employment certificate provided; additional reference at management discretion.
 
-SECTION 10 - MEDICAL INSURANCE PLAN DETAILS (Health Secure 7 - Category 2)
-Plan Name: Health Secure 7, Category 2
+MEDICAL INSURANCE PLAN DETAILS (Health Secure 7 - Category 2)
+Plan Name: GIG Health Secure 7, Category 2
 Area of Cover: UAE plus any one of India, Pakistan, Sri Lanka, Bangladesh, Philippines, Nepal & Bhutan (home country only)
 Yearly Maximum: AED 250,000
 Outside Area of Cover: Emergency only, no benefit otherwise
 
 IN-PATIENT & DAY CARE:
-- In-patient and daycare including surgeons, anesthetists, consultation charges, diagnostic procedures and physiotherapy: Included
+- In-patient and daycare including surgeons, anaesthetists, consultation charges, diagnostic procedures and physiotherapy: Included
 - Level of cover: 100% of Reasonable and Customary (R&C) cost in network A.4
 - Daily accommodation charges: Included
 - In-patient direct billing network: A.4
@@ -228,7 +228,7 @@ def slash_command():
 
     question = request.form.get("text", "").strip()
     user_id = request.form.get("user_id", "")
-    channel_id = request.form.get("channel_id", "")
+    response_url = request.form.get("response_url", "")
 
     if not question:
         return jsonify({
@@ -237,23 +237,24 @@ def slash_command():
         })
 
     def process_and_respond():
-        # Open a DM channel with the user so the reply always works
-        # regardless of where the slash command was typed
-        dm = slack_client.conversations_open(users=user_id)
-        dm_channel = dm["channel"]["id"]
-        thinking = slack_client.chat_postMessage(
-            channel=dm_channel,
-            text="_Nori is looking that up..._"
-        )
         answer = ask_claude(question)
-        slack_client.chat_update(
-            channel=dm_channel,
-            ts=thinking["ts"],
-            text=answer
+        import urllib.request, json as json_lib
+        payload = json_lib.dumps({
+            "response_type": "in_channel",
+            "text": answer
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            response_url,
+            data=payload,
+            headers={"Content-Type": "application/json"}
         )
+        urllib.request.urlopen(req)
 
     threading.Thread(target=process_and_respond).start()
-    return "", 200
+    return jsonify({
+        "response_type": "ephemeral",
+        "text": "_Nori is looking that up..._"
+    })
 
 
 @app.route("/slack/events", methods=["POST"])
