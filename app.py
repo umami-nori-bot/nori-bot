@@ -194,8 +194,9 @@ def ask_claude(question):
 def slash_command():
     """Handle /asknori slash command with ephemeral response to avoid timeout."""
     if not signature_verifier.is_valid_request(
-        request.get_data(), request.headers.get("X-Slack-Signature", ""),
-        request.headers.get("X-Slack-Request-Timestamp", "")
+        body=request.get_data().decode("utf-8"),
+        timestamp=request.headers.get("X-Slack-Request-Timestamp", ""),
+        signature=request.headers.get("X-Slack-Signature", "")
     ):
         return jsonify({"error": "Invalid signature"}), 403
 
@@ -243,8 +244,9 @@ def slack_events():
         return jsonify({"challenge": data["challenge"]})
 
     if not signature_verifier.is_valid_request(
-        request.get_data(), request.headers.get("X-Slack-Signature", ""),
-        request.headers.get("X-Slack-Request-Timestamp", "")
+        body=request.get_data().decode("utf-8"),
+        timestamp=request.headers.get("X-Slack-Request-Timestamp", ""),
+        signature=request.headers.get("X-Slack-Signature", "")
     ):
         return jsonify({"error": "Invalid signature"}), 403
 
