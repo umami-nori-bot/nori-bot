@@ -7,12 +7,10 @@ import re
 import threading
 from flask import Flask, request, jsonify
 from slack_sdk import WebClient
-from slack_sdk.signature import SignatureVerifier
 import anthropic
 
 app = Flask(__name__)
 slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
-signature_verifier = SignatureVerifier(os.environ["SLACK_SIGNING_SECRET"])
 anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 processed_events = set()
 
@@ -193,13 +191,6 @@ def ask_claude(question):
 @app.route("/slack/command", methods=["POST"])
 def slash_command():
     """Handle /asknori slash command with ephemeral response to avoid timeout."""
-    if not signature_verifier.is_valid_request(
-        body=request.get_data().decode("utf-8"),
-        timestamp=request.headers.get("X-Slack-Request-Timestamp", ""),
-        signature=request.headers.get("X-Slack-Signature", "")
-    ):
-        return jsonify({"error": "Invalid signature"}), 403
-
     question = request.form.get("text", "").strip()
     response_url = request.form.get("response_url", "")
 
@@ -239,16 +230,9 @@ def slack_events():
     """Handle Slack event subscriptions — DMs and channel messages."""
     data = request.json
 
-    # URL verification challenge — must respond before signature check
+    # URL verification challenge
     if data and data.get("type") == "url_verification":
         return jsonify({"challenge": data["challenge"]})
-
-    if not signature_verifier.is_valid_request(
-        body=request.get_data().decode("utf-8"),
-        timestamp=request.headers.get("X-Slack-Request-Timestamp", ""),
-        signature=request.headers.get("X-Slack-Signature", "")
-    ):
-        return jsonify({"error": "Invalid signature"}), 403
 
     if data.get("type") != "event_callback":
         return jsonify({"status": "ok"})
