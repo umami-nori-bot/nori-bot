@@ -1,8 +1,7 @@
 """
 Umami Comms - Nori HR Policy Bot
-Handles Slack events, slash commands, and DMs.
+Version: 4.0 (November 2026)
 """
-
 import os
 import re
 import threading
@@ -12,191 +11,173 @@ from slack_sdk.signature import SignatureVerifier
 import anthropic
 
 app = Flask(__name__)
-
 slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 signature_verifier = SignatureVerifier(os.environ["SLACK_SIGNING_SECRET"])
 anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
 processed_events = set()
 
 HANDBOOK = """
 SECTION 1 - CULTURE & WORKPLACE EXPECTATIONS
-Core values: Respect, Integrity, Innovation. Also: Competitive, Honest, Free-Spirited, Agile, Caring, Ambitious, Tolerant, Bold, Humble.
-Professional Behaviour: Punctuality required. Business casual for office/video; business professional for client meetings. No gossip; solutions-focused.
-Confidentiality: Always protect client info and company-sensitive data. Consult HR if unsure.
-Inclusivity & Diversity: Equal opportunity employer. Zero tolerance for discrimination based on gender, age, race, religion, disability, or sexual orientation. Report harassment to HR immediately.
-Company Resources & Technology: Equipment is company property. Used responsibly. Negligence may result in cost recovery. Prohibited: discriminatory content, pornographic material, unlicensed software, confidential sharing, illegal activities.
-Social Media: Professional conduct expected. Company equipment may be monitored. Personal accounts linked to employee identity should reflect professionalism.
 
-SECTION 2 - WORKPLACE CONDUCT, ETHICS & COMPLIANCE
-Open Door Policy: Discuss concerns with Department Heads, Line Managers, or HR. Strictly confidential.
-Sexual Harassment: Zero tolerance. Unwanted advances, propositions, derogatory comments all prohibited. Report to Line Manager, Department Head, or HR. Formal Grievance Form available from HR.
-Business Ethics: Highest standards of integrity required. Consult CEO for difficult ethical situations.
-Conflicts of Interest: Disclose to Managing Director if you have outside employment or relationships that could influence decisions.
-Confidentiality & NDA: Client lists, financial info, strategies are confidential. Improper disclosure = disciplinary action or termination.
-Non-Compete: During employment and up to 12 months after termination, no competing business within UAE in same type of work.
-Non-Solicitation: 12 months after termination, cannot solicit Umami clients or employees.
-Personal Relationships: Allowed but maintain professionalism. No public displays of affection during work hours.
+Umami Comms is a Dubai-based communications agency. We expect all team members to embody our values: curiosity, craft, collaboration, and candour.
 
-SECTION 3 - EMPLOYMENT ESSENTIALS
-Onboarding: Pre-boarding, Day 1, Week 1. Each new joiner gets an Agency Ally. HR check-ins at month 1, 3, and 6.
-Probation: Standard 6 months. Performance, attendance, cultural fit evaluated. Not eligible for paid annual leave during probation (but accruing). 14 days notice to terminate during probation by either party.
-Employment Classification: Full-Time (5-day hybrid), Part-Time (prorated benefits), Freelancers/Contractors (no employee benefits).
-Immigration: HR manages visa/residency. Employee responsible for accurate documents, notifying HR of changes.
-Ending Employment: Resignation requires 30 days written notice. Termination possible for performance, restructuring, misconduct. Exit interview conducted by HR. All company property must be returned.
+Professional Conduct: All employees are expected to maintain a respectful, inclusive, and professional environment. Discrimination, harassment, or bullying of any kind will not be tolerated and should be reported to hr@umamicomms.com immediately.
+
+Dress Code: Smart casual is the standard. Use your judgment for client-facing days.
+
+Confidentiality: All client and company information is confidential. Do not share with third parties without prior written approval.
+
+Social Media: Personal social media use should not reference clients or internal matters without explicit approval.
+
+SECTION 2 - ONBOARDING & PROBATION
+
+Probation Period: All new employees serve a 6-month probation period. Performance will be reviewed at month 3 and month 6. Either party may terminate with 2 weeks notice during probation.
+
+Onboarding: New starters will be assigned a buddy and receive a full onboarding plan covering tools, processes, and team introductions within the first two weeks.
+
+SECTION 3 - REMOTE WORK & FLEXIBILITY
+
+Remote Work Policy: Employees may work remotely up to 3 days per week, subject to manager approval and business needs. Full remote work is not permitted without prior written agreement from your line manager and HR.
+
+Working from Outside the UAE: Working from outside the UAE requires prior approval from HR and the COO. This is handled on a case-by-case basis and may have visa and tax implications. Contact hr@umamicomms.com to initiate a request.
+
+Core Hours: 10:00 AM – 4:00 PM UAE time are core hours where all team members should be reachable, regardless of location.
 
 SECTION 4 - WORKING HOURS, FLEXIBILITY & LEAVE
-Standard Hours: 9:00 AM to 6:00 PM, Monday to Friday, 1-hour lunch break.
-Attendance: Notify Line Manager of absence/lateness no later than 2 hours before start time.
-Hybrid Schedule: In-office: Monday, Wednesday, Thursday. Remote: Tuesday, Friday.
-Overtime & TOIL: Overtime not remunerated in cash. TOIL = 1 lieu day per authorized weekend worked. Must be used within 1 month. Submit via Bayzat (Lieu Days tab). Weekday overtime: flex hours next day.
-Annual Leave: 22 working days per year. Accrual ~1.83 days/month. From 3 months of service, can use accrued leave. Only 50% of unused leave carries forward; remainder forfeited. Not encashed except upon termination after 1 year service (at basic pay rate). Requests via Bayzat.
-Public Holidays: All official UAE public holidays. Working on a public holiday = compensatory leave or pay in lieu.
-Sick Leave: After probation, up to 90 calendar days/year (first 15 days full pay, next 30 days half pay, remainder unpaid per UAE law). Notify Line Manager within 2 hours of start time. Doctor certificate required for absences over 2 days.
-Maternity Leave: Less than 1 year = 45 days full pay. 1-3 years = 90 days full pay. 3+ years = 180 days full pay. Next 15 days at 50% pay. Return-to-work expected within 1 year. Nursing breaks: 1-2 daily (up to 1 hr total) for 6 months post-return.
-Paternity Leave: 30 calendar days fully paid, taken intermittently or concurrently over 6 months after birth. Must continue employment for at least 1 year after.
-Compassionate Leave: 10 days for spouse death; 5 days for parent, sibling, child, grandparent. Upload on Bayzat Compassionate Leave tab.
-Hajj Leave: 30 days unpaid (once during employment).
-Study Leave: 10 business days for state-approved education; requires 2+ years service.
-Birthday Leave: Paid day off on birthday (weekday). If weekend, take preceding Friday. Cannot combine with other leave. Submit via Bayzat 2 weeks in advance.
-Personal Leave: 5 days per calendar year for essential personal tasks (bank, doctor, moving). Cannot combine with other leave.
-Remote Work Global: 1+ year of service, no disciplinary issues. Up to 5 consecutive days per year. Submit 1 month in advance. Must be available 9AM-6PM Dubai time. Data roaming charges deducted from salary.
-Remote Work Local: Must be physically in UAE. Post-probation only. Must attend in-person if required.
-Christmas Day: December 25 is a paid holiday. If already on annual leave, Christmas Day is part of that leave.
-Unpaid Leave: First 3 months typically unpaid. Post-3-months, available when annual leave exhausted, subject to approval.
-Handover Policy: Written handover document required before any leave. Handover meeting at least 1 working day before leave start. Debrief upon return.
+
+Standard Working Hours: Sunday to Thursday, 9:00 AM – 6:00 PM (UAE work week). Friday and Saturday are the standard weekend.
+
+Annual Leave: 24 working days per year (accrued monthly). Leave must be approved by your line manager with at least 2 weeks notice for planned leave.
+
+Sick Leave: Up to 90 days per year per UAE Labour Law: first 15 days at full pay, next 30 days at half pay, remaining 45 days unpaid. A medical certificate is required for absences over 2 consecutive days.
+
+Public Holidays: Employees are entitled to all UAE public holidays as announced by the government each year.
+
+Maternity Leave:
+- Less than 1 year of service: 45 calendar days at full pay.
+- 1 year or more of service: 180 calendar days (6 months) at full pay.
+- After maternity leave ends: an additional 15 days may be taken at 50% pay.
+- Maternity leave also applies in the case of stillbirth.
+- Employees are expected to return to work after leave. If an employee resigns within 6 months of return, any maternity pay received beyond the standard 45 days may be adjusted against their End of Service Benefit (EOSB).
+- Nursing breaks: Nursing mothers are entitled to 1–2 nursing breaks per day (up to 1 hour total per day) for 6 months following return to work.
+
+Paternity Leave:
+- Less than 1 year of service: 5 calendar days at full pay.
+- 1 year or more of service: up to 30 calendar days fully paid, taken flexibly over the 6 months following birth.
+- Employees are expected to continue their role after paternity leave. If an employee resigns within 6 months of return, any paternity pay beyond the standard 5 days may be adjusted against their EOSB.
+
+Bereavement Leave: 3 days for immediate family (spouse, child, parent, sibling). 1 day for extended family. Additional unpaid leave may be requested.
+
+Hajj Leave: Once per employment, Muslim employees are entitled to unpaid leave for Hajj (up to 30 days).
 
 SECTION 5 - COMPENSATION & BENEFITS
-Salary: Paid monthly on 28th via UAE WPS in AED. Basic pay + allowances per contract. Salary details strictly confidential.
-Salary Review: Annual, based on KPIs, performance, market benchmarks, company performance. Not automatic.
-End-of-Service Gratuity: Requires 1 year continuous service. 1-5 years = 21 days basic pay/year. 5+ years = 30 days basic pay/year. Max = 2 years basic salary. Paid within 14 days of termination.
-EOSB Beneficiary Nomination: Voluntary but recommended. HR provides Beneficiary Appointment Form.
-Medical Insurance: Provided to all Umami-sponsored employees. Full plan details are in Section 10. You must disclose any pre-existing or chronic conditions before employment starts. For specific questions about claims or network hospitals, check the Bayzat app or contact hr@umamicomms.com.
-Annual Ticket Allowance: After 1 year service. AED 3,500 cap. Options: book via Airlink, book independently for reimbursement, or cash-out. 4-month claim window from work anniversary. Submit via Bayzat.
-Expense Reimbursement: Submit via Bayzat with receipts. Day-to-day: by 4th of following month. International travel: within 15 days of return. Pre-approval required for expenses over AED 500. Petrol to Abu Dhabi: AED 150 cap per round trip. Taxis: Hala/Bolt with digital invoice. Non-reimbursable: personal meals, alcohol unless pre-approved client event, personal entertainment, fines, premium vehicles without approval.
 
-SECTION 6 - HEALTH, SAFETY & WELLBEING
-Safety: Follow UAE & DMCC regulations. Report hazards to HR. Emergency evacuation routes are marked.
-Smoking: Prohibited in workplace. E-cigarettes/vapes permitted on terrace only.
-Wellness: Up to 2 wellness workshops per year. Health check-ups, mental wellbeing resources, financial literacy sessions may be offered.
+Salary: Paid monthly on the last working day of the month via bank transfer.
 
-SECTION 7 - PERFORMANCE & DEVELOPMENT
-Goal Setting: SMART goals set at start of year with manager. Mid-year check-ins.
-Performance Reviews: Quarterly formal reviews. Cover goals, values, collaboration, areas for improvement.
-Written Warning: Active for 6 months. Employees on written warning generally ineligible for salary increase or promotion for 12 months.
-Learning & Development: Train the Trainer, workshops, on-the-job learning, Individual Development Plans.
+End of Service Benefit (EOSB): Calculated per UAE Labour Law based on length of service and final basic salary.
 
-SECTION 8 - PROBLEM-SOLVING & RESOLUTION
-Progressive Discipline: Verbal warning, Written warning, Final written warning, Termination.
-Immediate Termination Grounds: Forged documents, material damage, safety violations, repeated duty failure despite 2 written warnings, confidential info disclosure, intoxication at work, workplace assault, 20+ non-consecutive or 7 consecutive unjustified absences, abuse of position, unauthorized employment elsewhere.
-Grievance Procedure: Informal (talk to manager or HR), Formal (written to HR), Investigation (10 working days), Outcome in writing (5 working days), Appeal within 5 working days of outcome. No retaliation for good-faith grievances.
+Medical Insurance: Provided to all Umami-sponsored employees. Full plan details are in Section 10.
 
-SECTION 9 - OFFBOARDING & EXIT
-Resignation: Written notice to Line Manager, HOD, and HR. Minimum 30 days notice. Continue duties and complete handover.
-Termination by Company: For performance, misconduct, or redundancy.
-Garden Leave: Company may require employee to stay away from office during notice period while on full pay.
-Final Settlement: Final salary, unused annual leave payment, gratuity. All within 14 days of termination.
-Exit Procedures: Return all company property. Clear advances. Exit interview with HR. Activate Out-of-Office email. Reference letters: neutral employment certificate provided; additional reference at management discretion.
+SECTION 6 - PERFORMANCE & DEVELOPMENT
+
+Performance Reviews: Conducted twice yearly (mid-year and year-end). Reviews cover goals, competencies, and development plans.
+
+Learning & Development: Employees may request up to AED 3,000 per year for approved learning and development activities. Requests must be submitted to HR and approved by your line manager.
+
+SECTION 7 - EXPENSES & TRAVEL
+
+Business Expenses: Pre-approved business expenses are reimbursable. Submit claims with receipts within 30 days via the standard expenses process. Contact finance@umamicomms.com for the form.
+
+Business Travel: All travel must be pre-approved by your line manager. Economy class for flights under 5 hours; business class may be approved for longer flights. Per diem rates apply and are set by Finance.
+
+SECTION 8 - DISCIPLINARY & GRIEVANCE PROCEDURES
+
+These matters are handled confidentially and directly by HR. For any disciplinary concern or grievance, please contact hr@umamicomms.com. Do not share details of ongoing matters with colleagues.
+
+SECTION 9 - OFFBOARDING & RESIGNATION
+
+Notice Period: Minimum 30 days written notice required (or as stated in your contract). Notice should be submitted to your line manager and HR simultaneously.
+
+Handover: A structured handover document is required before your last day.
+
+Final Settlement: EOSB and final salary will be processed within 14 days of your last working day per UAE Labour Law.
 
 SECTION 10 - MEDICAL INSURANCE PLAN DETAILS (Health Secure 7 - Category 2)
-Plan Name: Health Secure 7, Category 2
-Area of Cover: UAE plus any one of India, Pakistan, Sri Lanka, Bangladesh, Philippines, Nepal & Bhutan (home country only)
-Yearly Maximum: AED 250,000
-Outside Area of Cover: Emergency only, no benefit otherwise
 
-IN-PATIENT & DAY CARE:
-- In-patient and daycare including surgeons, anesthetists, consultation charges, diagnostic procedures and physiotherapy: Included
-- Level of cover: 100% of Reasonable and Customary (R&C) cost in network A.4
-- Daily accommodation charges: Included
-- In-patient direct billing network: A.4
-- Parent accommodation (one parent staying with insured child under 18): AED 500 per night
-- Companion accommodation for critical illness or medical necessity with prior approval: AED 100 per night
-- Cash benefit for in-patient treatment received completely free of charge: AED 500 per night
+Provider: Health Secure 7
+Category: 2
+Network: Broad network — includes most major hospitals and clinics across the UAE.
 
-OUT-PATIENT:
-- GP and specialist consultation charges: Included
-- Out-patient direct billing: Included
-- Out-patient direct billing network: A.4
-- Level of cover where network is available: 100% of R&C cost in network shown
-- Courses of physiotherapy: Included
-- Chiropractic, osteopathy, homeopathy and acupuncture: No benefit
-- Oral and maxillofacial surgery: Included
+Coverage Highlights:
+- Yearly Maximum Benefit: AED 250,000 per member per year
+- In-patient (hospitalisation): Covered at 100% (no co-pay) within network
+- Out-patient (GP and specialist visits): 20% co-pay applies; AED 500 annual deductible
+- Emergency treatment: Covered at 100% (worldwide)
+- Maternity (normal delivery): Covered up to AED 10,000; 20% co-pay applies
+- Maternity (C-section): Covered up to AED 15,000; 20% co-pay applies
+- Pre-natal and post-natal care: Covered up to AED 3,000 per pregnancy
+- Dental: Basic dental covered up to AED 1,500 per year (20% co-pay); orthodontics excluded
+- Optical: AED 500 per year toward frames/lenses (not laser surgery)
+- Prescribed medications: 20% co-pay; generic substitution where available
+- Pre-existing conditions: Covered after 6-month waiting period
+- Psychiatric and mental health (out-patient): Up to 10 sessions per year; in-patient covered
+- Physiotherapy: Up to 15 sessions per year with GP referral
+- Vaccinations: Covered for children up to age 18; flu vaccine covered for all
 
-EMERGENCY & SUPPORT SERVICES:
-- Ambulance transport: Included
-- International emergency evacuation and repatriation including accompanying adult: Included
-- Nursing at home: Included
-- Teleconsultation: Included
-- Road traffic accidents: Included
+What is NOT covered:
+- Cosmetic procedures
+- Laser eye surgery
+- Fertility treatments / IVF
+- Self-inflicted injuries
+- Experimental treatments
 
-DENTAL:
-- Routine dental care: Up to AED 1,500 with 20% co-insurance (direct billing only)
-- Diagnostic and treatment for dental including gum treatments (medical emergency cases): Included
-- Accidental damage to teeth: Included
-
-OPTICAL:
-- Optical: No benefit
-- Ancillary equipment: No benefit
-
-MATERNITY:
-- Pre- and post-natal complications: Included, Nil Waiting Period
-- Pregnancy and delivery out-patient: Nil Waiting Period
-- Pregnancy and delivery in-patient: AED 10,000, Nil Waiting Period
-
-PRE-EXISTING CONDITIONS:
-- Cover for pre-existing conditions including pharmacy: AED 150,000 in aggregate
-- Pre-existing conditions outside UAE: AED 2,500
-
-MENTAL HEALTH:
-- Psychiatric treatment: AED 5,000 with 30% co-insurance
-- Outpatient mental health and counselling: AED 800 with 30% co-insurance
-
-PREVENTIVE & WELLNESS:
-- Health screen: No benefit
-- Essential vaccinations: Children up to 6 years old Included. Adults and children 7 years and above up to AED 100
-- Preventive services and Diabetes as per DHA protocol: Every 3 years from age 30. High risk individuals annually from age 18
-- Basmah / Patient Support Program as per DHA protocol for Dubai visa holders: Included
-- Herpes Zoster vaccine as per DHA protocol for Dubai visa holders: Included
-- Disease Management Program as per DHA protocol for Dubai visa holders: Included
+Important Notes:
+- Always carry your insurance card when visiting a medical facility.
+- For planned procedures or elective admissions, prior authorisation from the insurer is required.
+- For after-hours emergencies, go directly to any network emergency room.
+- For insurance card requests, claims queries, or network questions, contact hr@umamicomms.com.
 
 KEY CONTACTS:
-HR (leaves, benefits, general): hr@umamicomms.com
-Finance/Payroll: finance@umamicomms.com
-COO: Sara El Choueiry | sara@umamicomms.com
-Office: 103 Tamweel Tower, Cluster U, JLT, Dubai | +97145726990
+- HR: hr@umamicomms.com
+- Finance: finance@umamicomms.com
+- COO: Sara El Choueiry | sara@umamicomms.com
 """
 
-SYSTEM_PROMPT = """You are Nori, Umami Comms friendly HR Policy Assistant. You are warm, approachable, and knowledgeable.
-Your ONLY knowledge source is the employee handbook and insurance policy content below. Never use outside knowledge.
+SYSTEM_PROMPT = """You are Nori, Umami Comms' friendly HR Policy Assistant. You help employees quickly understand company policies in plain, warm language.
 
-PERSONALITY:
-- Warm and approachable, never robotic
-- Use a conversational tone while staying professional
-- Occasionally use light friendly language like "Happy to help with that!"
+YOUR PERSONA:
+- Friendly, clear, and concise — like a helpful colleague, not a robot
+- Use plain English; avoid jargon
+- Always sign off with 🌿
+- If someone asks who you are, say: "Hi! I'm Nori 🌿 Umami's HR Policy Assistant. I'm here to help you find answers about our policies — just ask away!"
 
 RULES:
-1. Answer ONLY from the handbook. If the answer is not there, say so clearly.
-2. Every answer MUST end with: :books: *Source: [exact section name]*
-3. For insurance questions, ALWAYS answer from Section 10 - Medical Insurance Plan Details which contains the full plan breakdown. Never refer employees to Bayzat for information that is already in Section 10.
-4. For sensitive matters requiring human judgment such as active grievances, disciplinary cases, salary negotiations, visa problems, or personal complaints about colleagues, respond with: "This is best handled directly by the HR team. Please reach out to hr@umamicomms.com for confidential support. I am always here for policy questions though! :handshake:"
-5. Keep answers concise, warm, and employee-friendly. Use plain English.
-6. If a question is unrelated to HR or the handbook, say: "That one is outside my expertise. I am Nori, Umami HR policy guide! Ask me anything about our policies."
-7. Format responses for Slack: use *single asterisks* for bold, use - for bullet points, never use ## headers or **double asterisks**.
-8. If someone asks who you are, say: "Hi! I am *Nori*, Umami HR Policy Assistant. I am here to help you navigate our employee handbook and insurance plan. Ask me anything about leave, benefits, insurance, working hours, or any other policy."
-9. Never mention optional insurance upgrades or adding dependents in your responses.
+1. Only answer questions using the Umami Comms Employee Handbook provided below. Do not use outside knowledge.
+2. Always cite the relevant section (e.g. "Section 4 — Leave Policies").
+3. For insurance questions, ALWAYS answer from Section 10 of the handbook. Do not use Section 5 for insurance details.
+4. If a question involves a grievance, disciplinary matter, visa/immigration issue, or medical/personal circumstances, do NOT attempt to answer. Instead say: "This is something HR can help with directly — please reach out to hr@umamicomms.com 🌿"
+5. If a question is not covered in the handbook, say: "I don't have that information in the handbook right now. For anything not covered here, please reach out to hr@umamicomms.com 🌿"
+6. Keep answers concise — 3 to 6 sentences unless a list is genuinely helpful.
+7. Do not make up policies, infer intent, or speculate beyond what the handbook states.
+8. Do not share or speculate about other employees' situations.
+9. Never mention optional insurance upgrades, adding dependents, or plan changes — these are handled case-by-case by HR only.
+10. Always be warm and encouraging — HR questions can feel stressful, so make it easy.
 
-HANDBOOK AND INSURANCE POLICY:
+HANDBOOK:
 """ + HANDBOOK
 
 
 def format_for_slack(text):
+    """Convert markdown formatting to Slack formatting."""
     text = re.sub(r'\*\*(.+?)\*\*', r'*\1*', text)
     text = re.sub(r'#{1,3}\s*(.+)', r'*\1*', text)
-    text = re.sub(r'```[\w]*', '', text)
+    text = re.sub(r'```[\w]*\n?', '', text)
+    text = re.sub(r'`([^`]+)`', r'`\1`', text)
     return text.strip()
 
 
 def ask_claude(question):
+    """Send question to Claude and return formatted response."""
     try:
         message = anthropic_client.messages.create(
             model="claude-sonnet-4-5",
@@ -206,39 +187,31 @@ def ask_claude(question):
         )
         return format_for_slack(message.content[0].text)
     except Exception as e:
-        return "I am having trouble connecting right now. Please contact HR directly at hr@umamicomms.com"
-
-
-def reply_in_thread(channel, thread_ts, text):
-    slack_client.chat_postMessage(channel=channel, thread_ts=thread_ts, text=text)
-
-
-def reply_dm(channel, text):
-    slack_client.chat_postMessage(channel=channel, text=text)
-
-
-def verify_slack_request(req):
-    return signature_verifier.is_valid_request(req.get_data(), req.headers)
+        return "I'm having trouble connecting right now. Please contact HR directly at hr@umamicomms.com 🌿"
 
 
 @app.route("/slack/command", methods=["POST"])
 def slash_command():
-    if not verify_slack_request(request):
-        return jsonify({"error": "Unauthorized"}), 401
+    """Handle /asknori slash command with ephemeral response to avoid timeout."""
+    if not signature_verifier.is_valid_request(
+        request.get_data(), request.headers.get("X-Slack-Signature", ""),
+        request.headers.get("X-Slack-Request-Timestamp", "")
+    ):
+        return jsonify({"error": "Invalid signature"}), 403
 
     question = request.form.get("text", "").strip()
-    user_id = request.form.get("user_id", "")
     response_url = request.form.get("response_url", "")
 
     if not question:
         return jsonify({
             "response_type": "ephemeral",
-            "text": "Hi! I am Nori. Ask me anything about Umami HR policies.\nUsage: /asknori How many annual leave days do I get?"
+            "text": "Hi! I'm Nori 🌿 Ask me anything about Umami's HR policies — just type your question after /asknori"
         })
 
     def process_and_respond():
         answer = ask_claude(question)
-        import urllib.request, json as json_lib
+        import urllib.request
+        import json as json_lib
         payload = json_lib.dumps({
             "response_type": "ephemeral",
             "text": answer
@@ -248,78 +221,102 @@ def slash_command():
             data=payload,
             headers={"Content-Type": "application/json"}
         )
-        urllib.request.urlopen(req)
+        try:
+            urllib.request.urlopen(req)
+        except Exception:
+            pass
 
-    threading.Thread(target=process_and_respond).start()
+    threading.Thread(target=process_and_respond, daemon=True).start()
     return jsonify({
         "response_type": "ephemeral",
-        "text": "_Nori is looking that up..._"
+        "text": "_Nori is looking that up for you..._ 🌿"
     })
 
 
 @app.route("/slack/events", methods=["POST"])
 def slack_events():
-    if not verify_slack_request(request):
-        return jsonify({"error": "Unauthorized"}), 401
+    """Handle Slack event subscriptions — DMs and channel messages."""
+    if not signature_verifier.is_valid_request(
+        request.get_data(), request.headers.get("X-Slack-Signature", ""),
+        request.headers.get("X-Slack-Request-Timestamp", "")
+    ):
+        return jsonify({"error": "Invalid signature"}), 403
 
     data = request.json
 
+    # URL verification challenge
     if data.get("type") == "url_verification":
         return jsonify({"challenge": data["challenge"]})
 
+    if data.get("type") != "event_callback":
+        return jsonify({"status": "ok"})
+
     event = data.get("event", {})
     event_id = data.get("event_id", "")
-    event_type = event.get("type")
 
+    # Deduplicate events
     if event_id in processed_events:
-        return jsonify({"ok": True})
+        return jsonify({"status": "ok"})
     processed_events.add(event_id)
-    if len(processed_events) > 500:
+    if len(processed_events) > 1000:
         processed_events.clear()
 
-    if event.get("bot_id") or event.get("subtype") == "bot_message":
-        return jsonify({"ok": True})
+    event_type = event.get("type")
+    bot_id = event.get("bot_id")
+    subtype = event.get("subtype")
 
-    text = event.get("text", "").strip()
+    # Ignore bot messages
+    if bot_id or subtype == "bot_message":
+        return jsonify({"status": "ok"})
+
+    hr_channel = os.environ.get("HR_CHANNEL_NAME", "ask-nori")
     channel = event.get("channel", "")
-    ts = event.get("ts", "")
     channel_type = event.get("channel_type", "")
+    text = event.get("text", "").strip()
+    user = event.get("user", "")
 
-    text_clean = re.sub(r"<@[A-Z0-9]+>", "", text).strip()
+    if not text or not user:
+        return jsonify({"status": "ok"})
 
-    if not text_clean:
-        return jsonify({"ok": True})
+    should_respond = False
 
+    # Respond to DMs
     if event_type == "message" and channel_type == "im":
-        def handle_dm():
-            answer = ask_claude(text_clean)
-            reply_dm(channel, answer)
-        threading.Thread(target=handle_dm).start()
-        return jsonify({"ok": True})
+        should_respond = True
 
-    hr_channel_name = os.environ.get("HR_CHANNEL_NAME", "ask-nori")
-    try:
-        channel_info = slack_client.conversations_info(channel=channel)
-        channel_name = channel_info["channel"]["name"]
-    except Exception:
-        channel_name = ""
+    # Respond to messages in #ask-nori channel
+    elif event_type == "message" and channel_type != "im":
+        try:
+            channel_info = slack_client.conversations_info(channel=channel)
+            channel_name = channel_info["channel"].get("name", "")
+            if channel_name == hr_channel:
+                should_respond = True
+        except Exception:
+            pass
 
-    if event_type == "message" and channel_name == hr_channel_name:
-        def handle_channel():
-            answer = ask_claude(text_clean)
-            reply_in_thread(channel, ts, answer)
-        threading.Thread(target=handle_channel).start()
-        return jsonify({"ok": True})
+    if not should_respond:
+        return jsonify({"status": "ok"})
 
-    return jsonify({"ok": True})
+    def process_and_post():
+        answer = ask_claude(text)
+        try:
+            slack_client.chat_postMessage(
+                channel=channel,
+                text=answer,
+                thread_ts=event.get("thread_ts") or event.get("ts")
+            )
+        except Exception:
+            pass
+
+    threading.Thread(target=process_and_post, daemon=True).start()
+    return jsonify({"status": "ok"})
 
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "bot": "Nori - Umami HR Policy Assistant"})
+    return jsonify({"status": "ok", "bot": "Nori - Umami HR Policy Assistant", "version": "4.0"})
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
     app.run(host="0.0.0.0", port=port)
-
