@@ -236,17 +236,17 @@ def slash_command():
 @app.route("/slack/events", methods=["POST"])
 def slack_events():
     """Handle Slack event subscriptions — DMs and channel messages."""
+    data = request.json
+
+    # URL verification challenge — must respond before signature check
+    if data and data.get("type") == "url_verification":
+        return jsonify({"challenge": data["challenge"]})
+
     if not signature_verifier.is_valid_request(
         request.get_data(), request.headers.get("X-Slack-Signature", ""),
         request.headers.get("X-Slack-Request-Timestamp", "")
     ):
         return jsonify({"error": "Invalid signature"}), 403
-
-    data = request.json
-
-    # URL verification challenge
-    if data.get("type") == "url_verification":
-        return jsonify({"challenge": data["challenge"]})
 
     if data.get("type") != "event_callback":
         return jsonify({"status": "ok"})
