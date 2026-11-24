@@ -143,8 +143,8 @@ Study Leave: Employees studying in state-approved educational facilities are ent
 Birthday Leave: Umami provides a paid birthday leave day.
 - If your birthday falls on a weekday, you are entitled to a paid day off on that date.
 - If it falls on a weekend (Saturday or Sunday), you may take the preceding Friday or the following Monday as your Birthday Leave.
-- Birthday Leave cannot be combined with any other type of leave.
-- If you are already on approved leave on your birthday, Birthday Leave is forfeited (cannot be carried forward or encashed).
+- Birthday Leave cannot be combined with any other type of leave, except annual leave — it may be tagged onto an approved annual leave period.
+- If you are already on approved leave (other than annual leave) on your birthday, Birthday Leave is forfeited (cannot be carried forward or encashed).
 - Requests must be submitted at least 2 weeks in advance via Bayzat, with Line Manager approval.
 
 Personal Leave: 5 days per calendar year, regardless of tenure.
