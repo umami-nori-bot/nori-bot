@@ -35,11 +35,15 @@ Onboarding: New starters will be assigned a buddy and receive a full onboarding 
 
 SECTION 3 - REMOTE WORK & FLEXIBILITY
 
-Remote Work Policy: Employees may work remotely up to 3 days per week, subject to manager approval and business needs. Full remote work is not permitted without prior written agreement from your line manager and HR.
+Remote Work — Local (Within UAE): Standard hybrid working days are Tuesdays and Fridays. Remote work outside these days is only available to employees who have completed probation, unless approved in advance by the Head of Department and HR for an emergency. Employees must be physically present in the UAE on local remote work days, remain fully available for in-person meetings, client engagements, and urgent office requirements, and accurately declare their working location.
 
-Working from Outside the UAE: Working from outside the UAE requires prior approval from HR and the COO. This is handled on a case-by-case basis and may have visa and tax implications. Contact hr@umamicomms.com to initiate a request.
+Remote Work — Global (Outside UAE): Employees with at least 1 year of service and no recent disciplinary issues may apply for up to 5 consecutive global remote working days per calendar year. Submit a request to your Department Head at least 1 month in advance. Upload approved days via Bayzat (Remote tab). Global remote work may be tagged onto annual leave, provided the total combined duration does not exceed 2 consecutive weeks. Data roaming charges, if incurred, will be deducted from salary. Employees must be available during UAE working hours (9:00 AM – 6:00 PM), attend all scheduled calls with camera on (unless agreed otherwise), and use reliable technology.
+
+Working from Outside the UAE: Requires prior approval from HR and the COO. Any day spent outside the UAE during working hours without approved global remote work will be treated as annual or unpaid leave. Contact hr@umamicomms.com to initiate a request.
 
 Core Hours: 10:00 AM – 4:00 PM UAE time are core hours where all team members should be reachable, regardless of location.
+
+Christmas Day: Umami recognises Christmas Day (25 December) as a paid holiday. Dubai employees receive a paid day off if it falls on a regular working day. If an employee's approved annual leave period already includes Christmas Day, they will not receive an additional paid day — they may opt to deduct it from their annual leave entitlement instead.
 
 SECTION 4 - WORKING HOURS, FLEXIBILITY & LEAVE
 
@@ -67,6 +71,17 @@ Paternity Leave:
 Bereavement Leave: 3 days for immediate family (spouse, child, parent, sibling). 1 day for extended family. Additional unpaid leave may be requested.
 
 Hajj Leave: Once per employment, Muslim employees are entitled to unpaid leave for Hajj (up to 30 days).
+
+Birthday Leave: Umami provides a paid birthday leave day. If your birthday falls on a weekday, you get that day off. If it falls on a weekend (Saturday or Sunday), you may take the preceding Friday off instead. Birthday Leave cannot be combined with, attached to, or taken immediately before/after any other type of leave. If you are already on approved leave on your birthday, the Birthday Leave is forfeited and cannot be carried forward or encashed. Requests must be submitted at least 2 weeks in advance via Bayzat, with Line Manager approval.
+
+Personal Leave: Each employee is entitled to 5 days of Personal Leave per calendar year, regardless of tenure. Personal Leave is for essential life tasks such as bank or doctor appointments, moving house, or taking an RTA driving test. Personal Leave cannot be combined with any other type of leave. Submit via Bayzat with Line Manager approval.
+
+Overtime & Time Off In Lieu (TOIL): Overtime must be pre-authorised by your Line Manager. Overtime hours are not paid in cash — employees receive compensatory Time Off In Lieu (TOIL) instead.
+- Authorised weekend (Saturday or Sunday) work: 1 lieu day, regardless of hours worked. TOIL must be used within 1 month of the weekend duty and may not be taken on consecutive days. Submit via Bayzat (Lieu Days tab) before taking the day.
+- Weekday overtime (Monday–Thursday): With Line Manager approval, employees may start later (e.g. 11:00 AM) or leave earlier (e.g. 4:00 PM) on the following working day.
+- Friday overtime: With Line Manager approval, employees may adjust hours on the following Monday — arriving at the usual time and leaving earlier, or arriving later and completing a shortened day.
+- Client events, activations, photoshoots, or similar functions on weekdays: Employees are NOT eligible for TOIL. With Line Manager approval, they may adjust working hours the following business day (e.g. start at 11:00 AM or leave at 4:00 PM).
+- Working overtime without authorisation may result in disciplinary action.
 
 SECTION 5 - COMPENSATION & BENEFITS
 
